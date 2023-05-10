@@ -1,0 +1,62 @@
+#include<stdio.h>
+#include<stdlib.h>
+
+#define N 512
+
+void host_add(int *a, int *b, int *c){
+    for(int i = 0; i < N; i++){
+        c[i] = a[i] + b[i];
+    }
+}
+
+__global__ void device_add(int *a, int *b, int *c){
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    c[index] = a[index] + b[index];
+}
+
+void init_array(int *data){
+    for(int i = 0; i < N; i++){
+        data[i] = i;
+    }
+}
+
+void print_result(int *a, int *b, int *c){
+    for(int i = 0; i < N; i++)
+    printf("%d + %d = %d \n", a[i], b[i], c[i]);
+}
+
+int main(void){
+    int *a, *b, *c;
+    int *d_a, *d_b, *d_c;
+    int threads_per_block = 0, number_of_blocks = 0;
+
+    int size = N * sizeof(int);
+
+    //allocate space for host copies of a, b, c and init the vectors
+    a = (int *)malloc(size);
+    init_array(a);
+    b = (int *)malloc(size);
+    init_array(b);
+    c = (int *)malloc(size);
+
+    //allocate space for device copies of a, b, c
+    cudaMalloc((void **)&d_a, size);
+    cudaMalloc((void **)&d_b, size);
+    cudaMalloc((void **)&d_c, size);
+
+    cudaMemcpy(d_a, a, size, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_b, b, size, cudaMemcpyHostToDevice);
+
+    threads_per_block = 4;
+    number_of_blocks = N/threads_per_block;
+    device_add<<<number_of_blocks, threads_per_block>>>(d_a, d_b, d_c);
+    // Copy result back to host
+    cudaMemcpy(c, d_c, size, cudaMemcpyDeviceToHost);
+
+	print_result(a,b,c);
+
+	free(a); free(b); free(c);
+    cudaFree(d_a); cudaFree(d_b); cudaFree(d_c);
+
+    return 0;
+}

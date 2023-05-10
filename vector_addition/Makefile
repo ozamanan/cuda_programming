@@ -1,7 +1,7 @@
 CUDA_PATH=/usr/local/cuda
 HOST_COMPILER ?= g++
 NVCC=${CUDA_PATH}/bin/nvcc -ccbin ${HOST_COMPILER}
-TARGET=vector_addition
+TARGET=vector_addition vector_addition_gpu_block vector_addition_gpu_thread_block vector_addition_gpu_thread
 
 INCLUDES= -I${CUDA_PATH}/samples/common/inc
 NVCC_FLAGS=-m64 -lineinfo
@@ -15,7 +15,18 @@ SMS = 52 60 61 70 75 80
 endif
 $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=sm_$(sm)))
 
+all : ${TARGET}
+
 vector_addition: vector_addition.cu
+	${NVCC} ${INCLUDES} ${ALL_CCFLAGS} ${GENCODE_FLAGS} -o $@ $<
+
+vector_addition_gpu_block: vector_addition_gpu_block.cu
+	${NVCC} ${INCLUDES} ${ALL_CCFLAGS} ${GENCODE_FLAGS} -o $@ $<
+
+vector_addition_gpu_thread_block: vector_addition_gpu_thread_block.cu
+	${NVCC} ${INCLUDES} ${ALL_CCFLAGS} ${GENCODE_FLAGS} -o $@ $<
+
+vector_addition_gpu_thread: vector_addition_gpu_thread.cu
 	${NVCC} ${INCLUDES} ${ALL_CCFLAGS} ${GENCODE_FLAGS} -o $@ $<
 
 clean:
